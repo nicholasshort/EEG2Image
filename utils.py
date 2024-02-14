@@ -16,7 +16,7 @@ from functools import partial
 import matplotlib.pyplot as plt
 from matplotlib import style
 
-style.use('seaborn')
+# style.use('seaborn')
 
 # def map_func(path, resolution):
 # 	X = tf.image.decode_jpeg(tf.io.read_file(path), channels=3)
@@ -59,13 +59,13 @@ def show_batch_images(X, save_path, Y=None):
 	row = X.shape[0] // col
 	# print(X.shape[0], Y.shape)
 	for r in range(row):
-	    for c in range(col):
-	        plt.subplot2grid((row, col), (r, c), rowspan=1, colspan=1)
-	        plt.grid('off')
-	        plt.axis('off')
-	        if Y is not None:
-	        	plt.title('{}'.format(Y[r*col+c]))
-	        plt.imshow(X[r*col+c])
+		for c in range(col):
+			plt.subplot2grid((row, col), (r, c), rowspan=1, colspan=1)
+			plt.grid('off')
+			plt.axis('off')
+			if Y is not None:
+				plt.title('{}'.format(Y[r*col+c]))
+			plt.imshow(X[r*col+c])
 	plt.tight_layout()
 	plt.savefig(save_path)
 	plt.clf()

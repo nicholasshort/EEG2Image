@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+
+eeg2_data/*
+data/*
+experiments/*
+lstm_kmean/data/*
+lstm_kmean/experiments/*
+

@@ -14,10 +14,10 @@ import seaborn as sns
 import pandas as pd
 from sklearn.cluster import KMeans
 
-style.use('seaborn')
+# style.use('seaborn')
 
 os.environ["CUDA_DEVICE_ORDER"]= "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]= '1'
+os.environ["CUDA_VISIBLE_DEVICES"]= '0'
 
 np.random.seed(45)
 tf.random.set_seed(45)
@@ -60,34 +60,34 @@ if __name__ == '__main__':
 		print('Restored from the latest checkpoint, epoch: {}'.format(START))
 	EPOCHS = 3000
 	cfreq  = 178 # Checkpoint frequency
-	# for epoch in range(START, EPOCHS):
-	# 	train_acc  = tf.keras.metrics.SparseCategoricalAccuracy()
-	# 	train_loss = tf.keras.metrics.Mean()
-	# 	test_acc   = tf.keras.metrics.SparseCategoricalAccuracy()
-	# 	test_loss  = tf.keras.metrics.Mean()
+	for epoch in range(START, EPOCHS):
+		train_acc  = tf.keras.metrics.SparseCategoricalAccuracy()
+		train_loss = tf.keras.metrics.Mean()
+		test_acc   = tf.keras.metrics.SparseCategoricalAccuracy()
+		test_loss  = tf.keras.metrics.Mean()
 
-		# tq = tqdm(train_batch)
-		# for idx, (X, Y) in enumerate(tq, start=1):
-		# 	loss = train_step(triplenet, opt, X, Y)
-		# 	train_loss.update_state(loss)
-		# 	# Y_cap = triplenet(X, training=False)
-		# 	# train_acc.update_state(Y, Y_cap)
-		# 	triplenet_ckpt.step.assign_add(1)
-		# 	if (idx%cfreq) == 0:
-		# 		triplenet_ckptman.save()
-		# 	# tq.set_description('Train Epoch: {}, Loss: {}, Acc: {}'.format(epoch, train_loss.result(), train_acc.result()))
-		# 	tq.set_description('Train Epoch: {}, Loss: {}'.format(epoch, train_loss.result()))
-		# 	# break
+		tq = tqdm(train_batch)
+		for idx, (X, Y) in enumerate(tq, start=1):
+			loss = train_step(triplenet, opt, X, Y)
+			train_loss.update_state(loss)
+			# Y_cap = triplenet(X, training=False)
+			# train_acc.update_state(Y, Y_cap)
+			triplenet_ckpt.step.assign_add(1)
+			if (idx%cfreq) == 0:
+				triplenet_ckptman.save()
+			# tq.set_description('Train Epoch: {}, Loss: {}, Acc: {}'.format(epoch, train_loss.result(), train_acc.result()))
+			tq.set_description('Train Epoch: {}, Loss: {}'.format(epoch, train_loss.result()))
+			# break
 
-		# tq = tqdm(val_batch)
-		# for idx, (X, Y) in enumerate(tq, start=1):
-		# 	loss = test_step(triplenet, X, Y)
-		# 	test_loss.update_state(loss)
-		# 	# Y_cap = triplenet(X, training=False)
-		# 	# test_acc.update_state(Y, Y_cap)
-		# 	# tq.set_description('Test Epoch: {}, Loss: {}'.format(epoch, test_loss.result(), test_acc.result()))
-		# 	tq.set_description('Test Epoch: {}, Loss: {}'.format(epoch, test_loss.result()))
-		# 	# break
+		tq = tqdm(val_batch)
+		for idx, (X, Y) in enumerate(tq, start=1):
+			loss = test_step(triplenet, X, Y)
+			test_loss.update_state(loss)
+			# Y_cap = triplenet(X, training=False)
+			# test_acc.update_state(Y, Y_cap)
+			# tq.set_description('Test Epoch: {}, Loss: {}'.format(epoch, test_loss.result(), test_acc.result()))
+			tq.set_description('Test Epoch: {}, Loss: {}'.format(epoch, test_loss.result()))
+			# break
 
 	kmeanacc = 0.0
 	tq = tqdm(test_batch)
