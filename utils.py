@@ -43,7 +43,7 @@ def preprocess_data(X, Y, P, resolution=128):
 
 	return X, Y, I
 
-def load_complete_data(X, Y, P, batch_size=16, dataset_type='train'):	
+def load_complete_data(X, Y, P, batch_size=16, dataset_type='train'):
 	if dataset_type == 'train':
 		dataset = tf.data.Dataset.from_tensor_slices((X, Y, P)).map(preprocess_data).shuffle(buffer_size=2*batch_size).batch(batch_size, drop_remainder=False).prefetch(tf.data.experimental.AUTOTUNE)
 	else:

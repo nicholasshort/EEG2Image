@@ -30,6 +30,8 @@ def preprocess_data(X, Y):
 	Y = tf.argmax(Y)
 	return X, Y
 
-def load_complete_data(X, Y, batch_size=16):	
+def load_complete_data(X, Y, batch_size=16):
+	print(X.shape)
+	print(Y.shape)	
 	dataset = tf.data.Dataset.from_tensor_slices((X, Y)).map(preprocess_data).shuffle(buffer_size=2*batch_size).batch(batch_size, drop_remainder=False).prefetch(tf.data.experimental.AUTOTUNE)
 	return dataset
