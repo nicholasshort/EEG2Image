@@ -20,12 +20,12 @@ np.random.seed(45)
 clstoidx = {}
 idxtocls = {}
 
-for idx, item in enumerate(natsorted(glob('data/images/train/*')), start=0):
+for idx, item in enumerate(natsorted(glob('data/charimages/train/*')), start=0):
 	clsname = os.path.basename(item)
 	clstoidx[clsname] = idx
 	idxtocls[idx] = clsname
 
-image_paths = natsorted(glob('data/images/train/*/*'))
+image_paths = natsorted(glob('data/charimages/train/*/*'))
 imgdict     = {}
 for path in image_paths:
 	key = path.split(os.path.sep)[-2]
@@ -38,7 +38,7 @@ for path in image_paths:
 
 os.environ['TF_XLA_FLAGS'] = '--tf_xla_enable_xla_devices'
 os.environ["CUDA_DEVICE_ORDER"]= "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]= '1'
+os.environ["CUDA_VISIBLE_DEVICES"]= '0'
 
 if __name__ == '__main__':
 
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 	# cls2idx  = {key.split(os.path.sep)[-1]:idx for idx, key in enumerate(data_cls, start=0)}
 	# idx2cls  = {value:key for key, value in cls2idx.items()}
 
-	with open('data/eeg/image/data.pkl', 'rb') as file:
+	with open('data/eeg/char/data.pkl', 'rb') as file:
 		data = pickle.load(file, encoding='latin1')
 		train_X = data['x_train']
 		train_Y = data['y_train']
