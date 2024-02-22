@@ -88,7 +88,7 @@ if __name__ == '__main__':
 	# print
 
 	triplenet = TripleNet(n_classes=n_classes)
-	opt     = tf.keras.optimizers.Adam(learning_rate=3e-4)
+	opt = tf.keras.optimizers.legacy.Adam(learning_rate=3e-4)
 	triplenet_ckpt    = tf.train.Checkpoint(step=tf.Variable(1), model=triplenet, optimizer=opt)
 	triplenet_ckptman = tf.train.CheckpointManager(triplenet_ckpt, directory='lstm_kmean/experiments/best_ckpt', max_to_keep=5000)
 	triplenet_ckpt.restore(triplenet_ckptman.latest_checkpoint)
@@ -134,7 +134,7 @@ if __name__ == '__main__':
 		ckpt_manager = tf.train.CheckpointManager(ckpt, directory='experiments/ckpt', max_to_keep=300)
 		ckpt.restore(ckpt_manager.latest_checkpoint).expect_partial()
 
-	# print(ckpt.step.numpy())
+	print(ckpt.step.numpy())
 	START         = int(ckpt.step.numpy()) // len(train_batch) + 1
 	EPOCHS        = 300#670#66
 	model_freq    = 355#178#355#178#200#40
@@ -148,61 +148,62 @@ if __name__ == '__main__':
 
 	if not os.path.isdir('experiments/results'):
 		os.makedirs('experiments/results')
+  
+	with tf.device('/GPU:0'):
+		for epoch in range(START, EPOCHS):
+			t_gloss = tf.keras.metrics.Mean()
+			t_closs = tf.keras.metrics.Mean()
 
-	for epoch in range(START, EPOCHS):
-		t_gloss = tf.keras.metrics.Mean()
-		t_closs = tf.keras.metrics.Mean()
+			tq = tqdm(train_batch)
+			for idx, (E, Y, X) in enumerate(tq, start=1):
+				batch_size   = X.shape[0]
+				_, C = triplenet(E, training=False)
+				gloss, closs = dist_train_step(mirrored_strategy, model, model_gopt, model_copt, X, C, latent_dim, batch_size)
+				gloss = tf.reduce_mean(gloss)
+				closs = tf.reduce_mean(closs)
+				t_gloss.update_state(gloss)
+				t_closs.update_state(closs)
+				ckpt.step.assign_add(1)
+				if (idx%model_freq)==0:
+					ckpt_manager.save()
+				if (idx%t_visfreq)==0:
+					# latent_c = tf.concat([latent, C[:16]], axis=-1)
+					X = mirrored_strategy.run(model.gen, args=(latent,))
+					# X = X.values[0]
+					print(X.shape, latent_label.shape)
+					show_batch_images(X, save_path='experiments/results/{}.png'.format(int(ckpt.step.numpy())), Y=latent_label)
 
-		tq = tqdm(train_batch)
-		for idx, (E, Y, X) in enumerate(tq, start=1):
-			batch_size   = X.shape[0]
-			_, C = triplenet(E, training=False)
-			gloss, closs = dist_train_step(mirrored_strategy, model, model_gopt, model_copt, X, C, latent_dim, batch_size)
-			gloss = tf.reduce_mean(gloss)
-			closs = tf.reduce_mean(closs)
-			t_gloss.update_state(gloss)
-			t_closs.update_state(closs)
-			ckpt.step.assign_add(1)
-			if (idx%model_freq)==0:
-				ckpt_manager.save()
-			if (idx%t_visfreq)==0:
-				# latent_c = tf.concat([latent, C[:16]], axis=-1)
-				X = mirrored_strategy.run(model.gen, args=(latent,))
-				# X = X.values[0]
-				print(X.shape, latent_label.shape)
-				show_batch_images(X, save_path='experiments/results/{}.png'.format(int(ckpt.step.numpy())), Y=latent_label)
+				tq.set_description('E: {}, gl: {:0.3f}, cl: {:0.3f}'.format(epoch, t_gloss.result(), t_closs.result()))
+				# break
 
-			tq.set_description('E: {}, gl: {:0.3f}, cl: {:0.3f}'.format(epoch, t_gloss.result(), t_closs.result()))
+			with open('experiments/log.txt', 'a') as file:
+				file.write('Epoch: {0}\tT_gloss: {1}\tT_closs: {2}\n'.format(epoch, t_gloss.result(), t_closs.result()))
+			print('Epoch: {0}\tT_gloss: {1}\tT_closs: {2}'.format(epoch, t_gloss.result(), t_closs.result()))
+
+
+			if (epoch%10)==0:
+				save_path = 'experiments/inception/{}'.format(epoch)
+
+				if not os.path.isdir(save_path):
+					os.makedirs(save_path)
+
+				for cl in range(n_classes):
+					test_noise  = np.random.uniform(size=(test_eeg_cls[cl].shape[0],128), low=-1, high=1)
+					noise_lst   = np.concatenate([test_noise, test_eeg_cls[cl]], axis=-1)
+
+					for idx, noise in enumerate(tqdm(noise_lst)):
+						X = mirrored_strategy.run(model.gen, args=(tf.expand_dims(noise, axis=0),))
+						X = cv2.cvtColor(tf.squeeze(X).numpy(), cv2.COLOR_RGB2BGR)
+						X = np.uint8(np.clip((X*0.5 + 0.5)*255.0, 0, 255))
+						cv2.imwrite(save_path+'/{}_{}.jpg'.format(cl, idx), X)
+
+				# eeg_feature_vectors_test = np.array([test_eeg_features[np.random.choice(np.where(test_eeg_y == test_label)[0], size=(1,))[0]] for test_label in test_labels])
+				# latent_var  = np.concatenate([test_noise, eeg_feature_vectors_test], axis=-1)
+				# print(test_noise.shape, eeg_feature_vectors_test.shape, latent_var.shape)
+				# for idx, noise in enumerate(tqdm(latent_var)):
+				# 	X = mirrored_strategy.run(model.gen, args=(tf.expand_dims(noise, axis=0),))
+				# 	X = cv2.cvtColor(tf.squeeze(X).numpy(), cv2.COLOR_RGB2BGR)
+				# 	X = np.uint8(np.clip((X*0.5 + 0.5)*255.0, 0, 255))
+				# 	cv2.imwrite(save_path+'/{}_{}.jpg'.format(test_labels[idx], idx), X)
+				# print(X.shape)
 			# break
-
-		with open('experiments/log.txt', 'a') as file:
-			file.write('Epoch: {0}\tT_gloss: {1}\tT_closs: {2}\n'.format(epoch, t_gloss.result(), t_closs.result()))
-		print('Epoch: {0}\tT_gloss: {1}\tT_closs: {2}'.format(epoch, t_gloss.result(), t_closs.result()))
-
-
-		if (epoch%10)==0:
-			save_path = 'experiments/inception/{}'.format(epoch)
-
-			if not os.path.isdir(save_path):
-				os.makedirs(save_path)
-
-			for cl in range(n_classes):
-				test_noise  = np.random.uniform(size=(test_eeg_cls[cl].shape[0],128), low=-1, high=1)
-				noise_lst   = np.concatenate([test_noise, test_eeg_cls[cl]], axis=-1)
-
-				for idx, noise in enumerate(tqdm(noise_lst)):
-					X = mirrored_strategy.run(model.gen, args=(tf.expand_dims(noise, axis=0),))
-					X = cv2.cvtColor(tf.squeeze(X).numpy(), cv2.COLOR_RGB2BGR)
-					X = np.uint8(np.clip((X*0.5 + 0.5)*255.0, 0, 255))
-					cv2.imwrite(save_path+'/{}_{}.jpg'.format(cl, idx), X)
-
-			# eeg_feature_vectors_test = np.array([test_eeg_features[np.random.choice(np.where(test_eeg_y == test_label)[0], size=(1,))[0]] for test_label in test_labels])
-			# latent_var  = np.concatenate([test_noise, eeg_feature_vectors_test], axis=-1)
-			# print(test_noise.shape, eeg_feature_vectors_test.shape, latent_var.shape)
-			# for idx, noise in enumerate(tqdm(latent_var)):
-			# 	X = mirrored_strategy.run(model.gen, args=(tf.expand_dims(noise, axis=0),))
-			# 	X = cv2.cvtColor(tf.squeeze(X).numpy(), cv2.COLOR_RGB2BGR)
-			# 	X = np.uint8(np.clip((X*0.5 + 0.5)*255.0, 0, 255))
-			# 	cv2.imwrite(save_path+'/{}_{}.jpg'.format(test_labels[idx], idx), X)
-			# print(X.shape)
-		# break

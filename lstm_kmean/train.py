@@ -11,7 +11,7 @@ from tqdm import tqdm
 from sklearn.manifold import TSNE
 import matplotlib.pyplot as plt
 from matplotlib import style
-import seaborn as sns
+# import seaborn as sns
 import pandas as pd
 from sklearn.cluster import KMeans
 
@@ -80,7 +80,7 @@ if __name__ == '__main__':
 	START = 3000
 	# if triplenet_ckptman.latest_checkpoint:
 	# 	print('Restored from the latest checkpoint, epoch: {}'.format(START))
-	EPOCHS = 10
+	EPOCHS = 0
 	# cfreq  = 1 # Checkpoint frequency
 	smallest_loss = 0.95
 	for epoch in range(START, EPOCHS):
