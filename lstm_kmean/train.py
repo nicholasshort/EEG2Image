@@ -32,7 +32,7 @@ def load_brain2image_dataset(dataset_path):
 
     # Iterate over the files in the directory
     for file_name in os.listdir(dataset_path):
-        if file_name.endswith('.npy'):
+        if file_name.endswith('.npy') and file_name[-5] == '1': # Only load first subject's data
             # Construct the full file path
             file_path = os.path.join(dataset_path, file_name)
             # Load the .npy file
@@ -100,7 +100,7 @@ if __name__ == '__main__':
 
     n_channels = 128
     n_features = 128
-    batch_size = 5
+    batch_size = 40
     test_batch_size = 1
     n_classes = 40
 
@@ -135,14 +135,14 @@ if __name__ == '__main__':
     opt     = tf.keras.optimizers.Adam(learning_rate=3e-4)
     triplenet_ckpt    = tf.train.Checkpoint(step=tf.Variable(1), model=triplenet, optimizer=opt)
     triplenet_ckptman = tf.train.CheckpointManager(triplenet_ckpt, directory='experiments/best_ckpt', max_to_keep=5000)
-    triplenet_ckpt.restore(triplenet_ckptman.latest_checkpoint)
+    # triplenet_ckpt.restore(triplenet_ckptman.latest_checkpoint)
     # START = int(triplenet_ckpt.step) // len(train_batch)
-    START = 3000
+    START = 0
     # if triplenet_ckptman.latest_checkpoint:
     # 	print('Restored from the latest checkpoint, epoch: {}'.format(START))
-    EPOCHS = 0
+    EPOCHS = 800
     # cfreq  = 1 # Checkpoint frequency
-    smallest_loss = 0.95
+    smallest_loss = 0.8
     for epoch in range(START, EPOCHS):
         train_acc  = tf.keras.metrics.SparseCategoricalAccuracy()
         train_loss = tf.keras.metrics.Mean()
@@ -210,7 +210,7 @@ if __name__ == '__main__':
 
     # ax = plt.axes(projection='3d')
 
-    custom_labels = ['a', 'c', 'f', 'h', 'j', 'm', 'p', 's', 't', 'y']
+    # custom_labels = ['a', 'c', 'f', 'h', 'j', 'm', 'p', 's', 't', 'y']
 
     sns.scatterplot(
         x="x1", y="x2",
@@ -223,10 +223,10 @@ if __name__ == '__main__':
     )
 
     # Set custom labels for the legend
-    plt.legend(labels=custom_labels)
+    # plt.legend(labels=custom_labels)
 
     plt.show()
-    # plt.savefig('experiments/inference/{}_embedding.png'.format(epoch))
+    plt.savefig('experiments/inference/embedding.png')
 
     kmeans = KMeans(n_clusters=n_classes,random_state=45)
     kmeans.fit(feat_X)
