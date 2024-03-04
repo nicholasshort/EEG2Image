@@ -124,13 +124,19 @@ if __name__ == '__main__':
     directory_path_test = '/workspace/shared/eegstylegan/eeg_imagenet40_cvpr_2017_raw/test/'
     test_X, test_Y, _ = load_brain2image_dataset(directory_path_test)
 
+    print(train_Y.shape)
+    print(max(train_Y))
+
     train_batch = load_complete_data(train_X, train_Y, batch_size=batch_size)
     val_batch = load_complete_data(test_X, test_Y, batch_size=batch_size)
     test_batch  = load_complete_data(test_X, test_Y, batch_size=test_batch_size)
 
-    X, Y = next(iter(train_batch))
+    # X, Y = next(iter(train_batch))
 
     # print(X.shape, Y.shape)
+    # print(Y)
+
+    exit()
     triplenet = TripleNet(n_classes=n_classes)
     opt     = tf.keras.optimizers.Adam(learning_rate=3e-4)
     triplenet_ckpt    = tf.train.Checkpoint(step=tf.Variable(1), model=triplenet, optimizer=opt)
@@ -140,9 +146,9 @@ if __name__ == '__main__':
     START = 0
     # if triplenet_ckptman.latest_checkpoint:
     # 	print('Restored from the latest checkpoint, epoch: {}'.format(START))
-    EPOCHS = 800
+    EPOCHS = 20
     # cfreq  = 1 # Checkpoint frequency
-    smallest_loss = 0.8
+    smallest_loss = 0.0
     for epoch in range(START, EPOCHS):
         train_acc  = tf.keras.metrics.SparseCategoricalAccuracy()
         train_loss = tf.keras.metrics.Mean()
