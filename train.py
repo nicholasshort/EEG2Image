@@ -90,7 +90,7 @@ os.environ["CUDA_VISIBLE_DEVICES"]= '0'
 if __name__ == '__main__':
 	n_channels = 128
 	n_features = 128
-	batch_size = 40
+	batch_size = 20
 	test_batch_size = 1
 	n_classes = 40
 	# n_channels  = 14
@@ -129,7 +129,7 @@ if __name__ == '__main__':
 	latent_label = Y[:16]
 
 	gpus = tf.config.list_physical_devices('GPU')
-	mirrored_strategy = tf.distribute.MirroredStrategy(devices=['/GPU:1'], 
+	mirrored_strategy = tf.distribute.MirroredStrategy(devices=['/GPU:0'], 
 		cross_device_ops=tf.distribute.HierarchicalCopyAllReduce())
 	n_gpus = mirrored_strategy.num_replicas_in_sync
 	# print(n_gpus)
@@ -141,9 +141,17 @@ if __name__ == '__main__':
 	# print(latent_Y)
 	# latent_Y = latent_Y[:16]
 	# print
+ 
+	initial_lr = 3.2e-4
+	lr_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
+		initial_learning_rate=initial_lr,
+		decay_steps=1000,
+		decay_rate=0.985,
+		staircase=True)
+	
+	opt = tf.keras.optimizers.legacy.Adam(learning_rate=lr_schedule)
 
 	triplenet = TripleNet(n_classes=n_classes)
-	opt = tf.keras.optimizers.legacy.Adam(learning_rate=3e-4)
 	triplenet_ckpt    = tf.train.Checkpoint(step=tf.Variable(1), model=triplenet, optimizer=opt)
 	triplenet_ckptman = tf.train.CheckpointManager(triplenet_ckpt, directory='lstm_kmean/experiments/best_ckpt', max_to_keep=5000)
 	triplenet_ckpt.restore(triplenet_ckptman.latest_checkpoint)
@@ -153,7 +161,7 @@ if __name__ == '__main__':
 	print('Extracting test eeg features:')
 	# test_eeg_features = np.array([np.squeeze(triplenet(E, training=False)[1].numpy()) for E, Y, X in tqdm(test_batch)])
 	# test_eeg_y        = np.array([Y.numpy()[0] for E, Y, X in tqdm(test_batch)])
-	test_image_count = 50000 #// n_classes
+	test_image_count = test_I.shape[0] #// n_classes
 	# test_labels = np.tile(np.expand_dims(np.arange(0, 10), axis=-1), [1, test_image_count//n_classes])
 	# test_labels = np.sort(test_labels.ravel())
 
@@ -180,11 +188,11 @@ if __name__ == '__main__':
 	# test_image_count = test_image_count // n_classes
 	# print(test_eeg_features.shape, test_eeg_y.shape)
 
-	lr = 3e-4
+ 
 	with mirrored_strategy.scope():
 		model        = DCGAN()
-		model_gopt   = tf.keras.optimizers.Adam(learning_rate=lr, beta_1=0.2, beta_2=0.5)
-		model_copt   = tf.keras.optimizers.Adam(learning_rate=lr, beta_1=0.2, beta_2=0.5)
+		model_gopt   = tf.keras.optimizers.Adam(learning_rate=lr_schedule, beta_1=0.2, beta_2=0.5)
+		model_copt   = tf.keras.optimizers.Adam(learning_rate=lr_schedule, beta_1=0.2, beta_2=0.5)
 		ckpt         = tf.train.Checkpoint(step=tf.Variable(1), model=model, gopt=model_gopt, copt=model_copt)
 		ckpt_manager = tf.train.CheckpointManager(ckpt, directory='experiments/ckpt', max_to_keep=300)
 		# ckpt.restore(ckpt_manager.latest_checkpoint).expect_partial()
@@ -204,7 +212,9 @@ if __name__ == '__main__':
 
 	if not os.path.isdir('experiments/results'):
 		os.makedirs('experiments/results')
-
+	
+	# smallest_loss = 0.95
+	# smallest_loss = tf.keras.metrics.Mean()
 	with tf.device('/GPU:0'):
 		for epoch in range(START, EPOCHS):
 			t_gloss = tf.keras.metrics.Mean()
@@ -228,6 +238,11 @@ if __name__ == '__main__':
 					# X = X.values[0]
 					print(X.shape, latent_label.shape)
 					show_batch_images(X, save_path='experiments/results/{}.png'.format(int(ckpt.step.numpy())), Y=latent_label)
+				
+				# if t_closs < smallest_loss:
+				# 	triplenet_ckptman.save()
+				# 	smallest_loss = t_closs
+				# 	print("smallest loss found, saving to checkpoint")
 
 				tq.set_description('E: {}, gl: {:0.3f}, cl: {:0.3f}'.format(epoch, t_gloss.result(), t_closs.result()))
 				# break
@@ -237,8 +252,8 @@ if __name__ == '__main__':
 			print('Epoch: {0}\tT_gloss: {1}\tT_closs: {2}'.format(epoch, t_gloss.result(), t_closs.result()))
 
 
-			if (epoch%10)==0:
-				save_path = 'experiments/inception/{}'.format(epoch)
+			if (epoch%10)==0 and epoch != 0:
+				save_path = 'experiments/inception_b2i_jioh/{}'.format(epoch)
 
 				if not os.path.isdir(save_path):
 					os.makedirs(save_path)
