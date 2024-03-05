@@ -14,8 +14,18 @@ from matplotlib import style
 # import seaborn as sns
 import pandas as pd
 from sklearn.cluster import KMeans
+import wandb
 
 # style.use('seaborn')
+
+# Initialize W&B
+wandb.init(project="capstone", entity="zhast")
+wandb.config = {
+    "learning_rate": 3e-4,
+    "epochs": 20,
+    "batch_size": 256,
+    "n_classes": 10
+}
 
 os.environ["CUDA_DEVICE_ORDER"]= "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"]= '0'
@@ -71,16 +81,16 @@ if __name__ == '__main__':
 	X, Y = next(iter(train_batch))
 
 	# print(X.shape, Y.shape)
-	triplenet = TripleNet(n_classes=n_classes)
-	opt     = tf.keras.optimizers.Adam(learning_rate=3e-4)
-	triplenet_ckpt    = tf.train.Checkpoint(step=tf.Variable(1), model=triplenet, optimizer=opt)
-	triplenet_ckptman = tf.train.CheckpointManager(triplenet_ckpt, directory='experiments/best_ckpt', max_to_keep=5000)
+    triplenet = TripleNet(n_classes=n_classes)
+    opt = tf.keras.optimizers.Adam(learning_rate=wandb.config.learning_rate)
+    triplenet_ckpt = tf.train.Checkpoint(step=tf.Variable(1), model=triplenet, optimizer=opt)
+    triplenet_ckptman = tf.train.CheckpointManager(triplenet_ckpt, directory='experiments/best_ckpt', max_to_keep=5000)
 	triplenet_ckpt.restore(triplenet_ckptman.latest_checkpoint)
 	# START = int(triplenet_ckpt.step) // len(train_batch)
 	START = 3000
 	# if triplenet_ckptman.latest_checkpoint:
 	# 	print('Restored from the latest checkpoint, epoch: {}'.format(START))
-	EPOCHS = 0
+	EPOCHS = wandb.config.epochs
 	# cfreq  = 1 # Checkpoint frequency
 	smallest_loss = 0.95
 	for epoch in range(START, EPOCHS):
@@ -114,6 +124,9 @@ if __name__ == '__main__':
 		if test_loss_result < smallest_loss:
 				triplenet_ckptman.save()
 				smallest_loss = test_loss_result
+
+	wandb.finish()
+
 
 	kmeanacc = 0.0
 	tq = tqdm(test_batch)
