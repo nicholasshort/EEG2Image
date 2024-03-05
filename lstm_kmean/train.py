@@ -1,30 +1,30 @@
-import tensorflow as tf
-import numpy as np
-from glob import glob
-from natsort import natsorted
-import os
-import pickle
-from model import TripleNet, train_step, test_step
-from utils import load_complete_data
-from eeg2_dataloaders import create_EEG_dataset, create_image_dataset
-from tqdm import tqdm
-from sklearn.manifold import TSNE
-import matplotlib.pyplot as plt
-from matplotlib import style
-import seaborn as sns
-import pandas as pd
-from sklearn.cluster import KMeans
-import cv2
+    import tensorflow as tf
+    import numpy as np
+    from glob import glob
+    from natsort import natsorted
+    import os
+    import pickle
+    from model import TripleNet, train_step, test_step
+    from utils import load_complete_data
+    from eeg2_dataloaders import create_EEG_dataset, create_image_dataset
+    from tqdm import tqdm
+    from sklearn.manifold import TSNE
+    import matplotlib.pyplot as plt
+    from matplotlib import style
+    import seaborn as sns
+    import pandas as pd
+    from sklearn.cluster import KMeans
+    import cv2
 
-# style.use('seaborn')
+    # style.use('seaborn')
 
-os.environ["CUDA_DEVICE_ORDER"]= "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"]= '0'
+    os.environ["CUDA_DEVICE_ORDER"]= "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"]= '0'
 
-np.random.seed(45)
-tf.random.set_seed(45)
+    np.random.seed(45)
+    tf.random.set_seed(45)
 
-def load_brain2image_dataset(dataset_path):
+    def load_brain2image_dataset(dataset_path):
     eeg_data_list = []
     class_labels_list = []
     images_list = []
@@ -71,32 +71,32 @@ def load_brain2image_dataset(dataset_path):
 
     return eeg_data_array, one_hot_labels, images_array
 
-if __name__ == '__main__':
+    if __name__ == '__main__':
 
-	# Using EEG2 dataset
-	# n_channels  = 17
-	# n_feat      = 128
-	# batch_size  = 256
-	# test_batch_size  = 1
-	# n_classes   = 100
-	# dataset_path = "C:\\Users\\Nick\\Repos\\EEG2Image\\eeg2_data"
-	# subjects = ["sub-01"]
-	# print('Loading the eeg dataset:...')
-	# eeg_train_data, eeg_test_data = create_EEG_dataset(dataset_path, subjects)
-	# train_X = np.expand_dims(np.mean(eeg_train_data['sub-01']['preprocessed_eeg_data'], axis=1), axis=3)[0:1000]
-	# train_Y = np.zeros((1000, 100), dtype=int)
-	# for row in range(train_Y.shape[0]):
-	# 	train_Y[row, int(row / 10)] = 1
-	# train_batch = load_complete_data(train_X, train_Y, batch_size=batch_size)
-	# val_batch   = load_complete_data(train_X, train_Y, batch_size=batch_size)
-	# test_batch  = load_complete_data(train_X, train_Y, batch_size=test_batch_size)
-	
+    # Using EEG2 dataset
+    # n_channels  = 17
+    # n_feat      = 128
+    # batch_size  = 256
+    # test_batch_size  = 1
+    # n_classes   = 100
+    # dataset_path = "C:\\Users\\Nick\\Repos\\EEG2Image\\eeg2_data"
+    # subjects = ["sub-01"]
+    # print('Loading the eeg dataset:...')
+    # eeg_train_data, eeg_test_data = create_EEG_dataset(dataset_path, subjects)
+    # train_X = np.expand_dims(np.mean(eeg_train_data['sub-01']['preprocessed_eeg_data'], axis=1), axis=3)[0:1000]
+    # train_Y = np.zeros((1000, 100), dtype=int)
+    # for row in range(train_Y.shape[0]):
+    # 	train_Y[row, int(row / 10)] = 1
+    # train_batch = load_complete_data(train_X, train_Y, batch_size=batch_size)
+    # val_batch   = load_complete_data(train_X, train_Y, batch_size=batch_size)
+    # test_batch  = load_complete_data(train_X, train_Y, batch_size=test_batch_size)
 
-	# n_channels  = 14
-	# n_feat      = 128
-	# batch_size  = 256
-	# test_batch_size  = 1
-	# n_classes   = 10
+
+    # n_channels  = 14
+    # n_feat      = 128
+    # batch_size  = 256
+    # test_batch_size  = 1
+    # n_classes   = 10
 
     n_channels = 128
     n_features = 128
@@ -104,28 +104,25 @@ if __name__ == '__main__':
     test_batch_size = 1
     n_classes = 40
 
-	# data_cls = natsorted(glob('data/thoughtviz_eeg_data/*'))
-	# cls2idx  = {key.split(os.path.sep)[-1]:idx for idx, key in enumerate(data_cls, start=0)}
-	# idx2cls  = {value:key for key, value in cls2idx.items()}
+    # data_cls = natsorted(glob('data/thoughtviz_eeg_data/*'))
+    # cls2idx  = {key.split(os.path.sep)[-1]:idx for idx, key in enumerate(data_cls, start=0)}
+    # idx2cls  = {value:key for key, value in cls2idx.items()}
 
-	# with open('data/eeg/char/data.pkl', 'rb') as file:
-	# 	data = pickle.load(file, encoding='latin1')
-	# 	train_X = data['x_train']
-	# 	train_Y = data['y_train']
-	# 	test_X = data['x_test']
-	# 	test_Y = data['y_test']
+    # with open('data/eeg/char/data.pkl', 'rb') as file:
+    # 	data = pickle.load(file, encoding='latin1')
+    # 	train_X = data['x_train']
+    # 	train_Y = data['y_train']
+    # 	test_X = data['x_test']
+    # 	test_Y = data['y_test']
 
-	# # train_batch = load_complete_data('data/thoughtviz_eeg_data/*/train/*', batch_size=batch_size)
-	# # val_batch   = load_complete_data('data/thoughtviz_eeg_data/*/val/*', batch_size=batch_size)
-	# # test_batch  = load_complete_data('data/thoughtviz_eeg_data/*/test/*', batch_size=test_batch_size)
-	
+    # # train_batch = load_complete_data('data/thoughtviz_eeg_data/*/train/*', batch_size=batch_size)
+    # # val_batch   = load_complete_data('data/thoughtviz_eeg_data/*/val/*', batch_size=batch_size)
+    # # test_batch  = load_complete_data('data/thoughtviz_eeg_data/*/test/*', batch_size=test_batch_size)
+
     directory_path_train = '/workspace/shared/eegstylegan/eeg_imagenet40_cvpr_2017_raw/train/'
     train_X, train_Y, _ = load_brain2image_dataset(directory_path_train)
     directory_path_test = '/workspace/shared/eegstylegan/eeg_imagenet40_cvpr_2017_raw/test/'
     test_X, test_Y, _ = load_brain2image_dataset(directory_path_test)
-
-    print(train_Y.shape)
-    print(max(train_Y))
 
     train_batch = load_complete_data(train_X, train_Y, batch_size=batch_size)
     val_batch = load_complete_data(test_X, test_Y, batch_size=batch_size)
@@ -136,16 +133,15 @@ if __name__ == '__main__':
     # print(X.shape, Y.shape)
     # print(Y)
 
-    exit()
     triplenet = TripleNet(n_classes=n_classes)
     opt     = tf.keras.optimizers.Adam(learning_rate=3e-4)
     triplenet_ckpt    = tf.train.Checkpoint(step=tf.Variable(1), model=triplenet, optimizer=opt)
     triplenet_ckptman = tf.train.CheckpointManager(triplenet_ckpt, directory='experiments/best_ckpt', max_to_keep=5000)
-    # triplenet_ckpt.restore(triplenet_ckptman.latest_checkpoint)
-    # START = int(triplenet_ckpt.step) // len(train_batch)
-    START = 0
-    # if triplenet_ckptman.latest_checkpoint:
-    # 	print('Restored from the latest checkpoint, epoch: {}'.format(START))
+    triplenet_ckpt.restore(triplenet_ckptman.latest_checkpoint)
+    START = int(triplenet_ckpt.step) // len(train_batch)
+    # START = 0
+    if triplenet_ckptman.latest_checkpoint:
+        print('Restored from the latest checkpoint, epoch: {}'.format(START))
     EPOCHS = 20
     # cfreq  = 1 # Checkpoint frequency
     smallest_loss = 0.0
@@ -243,7 +239,7 @@ if __name__ == '__main__':
     kmeanacc = correct_labels/float(feat_Y.shape[0])
     print('Accuracy score: {0:0.2f}'. format(kmeanacc))
 
-	# with open('experiments/triplenet_log.txt', 'a') as file:
-	# 	file.write('E: {}, Train Loss: {}, Test Loss: {}, KM Acc: {}\n'.\
-	# 		format(epoch, train_loss.result(), test_loss.result(), kmeanacc))
-	# break
+    # with open('experiments/triplenet_log.txt', 'a') as file:
+    # 	file.write('E: {}, Train Loss: {}, Test Loss: {}, KM Acc: {}\n'.\
+    # 		format(epoch, train_loss.result(), test_loss.result(), kmeanacc))
+    # break

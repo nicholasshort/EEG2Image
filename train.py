@@ -129,7 +129,7 @@ if __name__ == '__main__':
 	latent_label = Y[:16]
 
 	gpus = tf.config.list_physical_devices('GPU')
-	mirrored_strategy = tf.distribute.MirroredStrategy(devices=['/GPU:1'], 
+	mirrored_strategy = tf.distribute.MirroredStrategy(devices=['/GPU:0'], 
 		cross_device_ops=tf.distribute.HierarchicalCopyAllReduce())
 	n_gpus = mirrored_strategy.num_replicas_in_sync
 	# print(n_gpus)
@@ -143,7 +143,7 @@ if __name__ == '__main__':
 	# print
 
 	triplenet = TripleNet(n_classes=n_classes)
-	opt = tf.keras.optimizers.legacy.Adam(learning_rate=3e-4)
+
 	triplenet_ckpt    = tf.train.Checkpoint(step=tf.Variable(1), model=triplenet, optimizer=opt)
 	triplenet_ckptman = tf.train.CheckpointManager(triplenet_ckpt, directory='lstm_kmean/experiments/best_ckpt', max_to_keep=5000)
 	triplenet_ckpt.restore(triplenet_ckptman.latest_checkpoint)
@@ -153,7 +153,7 @@ if __name__ == '__main__':
 	print('Extracting test eeg features:')
 	# test_eeg_features = np.array([np.squeeze(triplenet(E, training=False)[1].numpy()) for E, Y, X in tqdm(test_batch)])
 	# test_eeg_y        = np.array([Y.numpy()[0] for E, Y, X in tqdm(test_batch)])
-	test_image_count = 50000 #// n_classes
+	test_image_count = test_I.shape[0] #// n_classes
 	# test_labels = np.tile(np.expand_dims(np.arange(0, 10), axis=-1), [1, test_image_count//n_classes])
 	# test_labels = np.sort(test_labels.ravel())
 
@@ -237,13 +237,14 @@ if __name__ == '__main__':
 			print('Epoch: {0}\tT_gloss: {1}\tT_closs: {2}'.format(epoch, t_gloss.result(), t_closs.result()))
 
 
-			if (epoch%10)==0:
-				save_path = 'experiments/inception/{}'.format(epoch)
+			if (epoch%50)==0 and epoch != 0:
+				save_path = 'experiments/inception_b2i/{}'.format(epoch)
 
 				if not os.path.isdir(save_path):
 					os.makedirs(save_path)
 
-				for cl in range(n_classes):
+				# for cl in range(n_classes):
+				for cl in range(5):
 					test_noise  = np.random.uniform(size=(test_eeg_cls[cl].shape[0],128), low=-1, high=1)
 					noise_lst   = np.concatenate([test_noise, test_eeg_cls[cl]], axis=-1)
 
