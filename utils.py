@@ -30,24 +30,24 @@ from matplotlib import style
 # 	path = np.choice(imgdict[Y], size=(1,), replace=True)
 # 	return X, Y
 
-def preprocess_data(X, Y, P, resolution=128):
+def preprocess_data(X, Y, I, resolution=128):
 	X = tf.squeeze(X, axis=-1)
 	max_val = tf.reduce_max(X)/2.0
 	X = (X - max_val) / max_val
 	X = tf.transpose(X, [1, 0])
 	X = tf.cast(X, dtype=tf.float32)
 	Y = tf.argmax(Y)
-	I = tf.image.decode_jpeg(tf.io.read_file(P), channels=3)
+	# I = tf.image.decode_jpeg(tf.io.read_file(P), channels=3)
 	I = tf.image.resize(I, (resolution, resolution))
 	I = (tf.cast( I, dtype=tf.float32 ) - 127.5) / 127.5
 
 	return X, Y, I
 
-def load_complete_data(X, Y, P, batch_size=16, dataset_type='train'):
+def load_complete_data(X, Y, I, batch_size=16, dataset_type='train'):
 	if dataset_type == 'train':
-		dataset = tf.data.Dataset.from_tensor_slices((X, Y, P)).map(preprocess_data).shuffle(buffer_size=2*batch_size).batch(batch_size, drop_remainder=False).prefetch(tf.data.experimental.AUTOTUNE)
+		dataset = tf.data.Dataset.from_tensor_slices((X, Y, I)).map(preprocess_data).shuffle(buffer_size=2*batch_size).batch(batch_size, drop_remainder=False).prefetch(tf.data.experimental.AUTOTUNE)
 	else:
-		dataset = tf.data.Dataset.from_tensor_slices((X, Y, P)).map(preprocess_data).batch(batch_size, drop_remainder=False).prefetch(tf.data.experimental.AUTOTUNE)
+		dataset = tf.data.Dataset.from_tensor_slices((X, Y, I)).map(preprocess_data).batch(batch_size, drop_remainder=False).prefetch(tf.data.experimental.AUTOTUNE)
 	return dataset
 
 
