@@ -19,7 +19,7 @@ import wandb
 # style.use('seaborn')
 
 # Initialize W&B
-wandb.init(project="capstone", entity="zhast")
+wandb.init(project="capstone_lstm_kmean", entity="zhast")
 wandb.config = {
     "learning_rate": 3e-4,
     "epochs": 20,
@@ -81,10 +81,10 @@ if __name__ == '__main__':
 	X, Y = next(iter(train_batch))
 
 	# print(X.shape, Y.shape)
-    triplenet = TripleNet(n_classes=n_classes)
-    opt = tf.keras.optimizers.Adam(learning_rate=wandb.config.learning_rate)
-    triplenet_ckpt = tf.train.Checkpoint(step=tf.Variable(1), model=triplenet, optimizer=opt)
-    triplenet_ckptman = tf.train.CheckpointManager(triplenet_ckpt, directory='experiments/best_ckpt', max_to_keep=5000)
+	triplenet = TripleNet(n_classes=n_classes)
+	opt = tf.keras.optimizers.Adam(learning_rate=wandb.config.learning_rate)
+	triplenet_ckpt = tf.train.Checkpoint(step=tf.Variable(1), model=triplenet, optimizer=opt)
+	triplenet_ckptman = tf.train.CheckpointManager(triplenet_ckpt, directory='experiments/best_ckpt', max_to_keep=5000)
 	triplenet_ckpt.restore(triplenet_ckptman.latest_checkpoint)
 	# START = int(triplenet_ckpt.step) // len(train_batch)
 	START = 3000

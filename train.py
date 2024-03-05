@@ -14,8 +14,21 @@ import cv2
 from lstm_kmean.model import TripleNet
 import math
 # from eval_utils import get_inception_score
+import wandb
+
 tf.random.set_seed(45)
 np.random.seed(45)
+
+wandb.init(project='capstone', entity='zhast', config={
+    "n_channels": 14,
+    "n_feat": 128,
+    "batch_size": 128,
+    "test_batch_size": 1,
+    "n_classes": 10,
+    "learning_rate": 3e-4,
+    "epochs": 300, 
+})
+
 
 clstoidx = {}
 idxtocls = {}
@@ -176,6 +189,9 @@ if __name__ == '__main__':
 				tq.set_description('E: {}, gl: {:0.3f}, cl: {:0.3f}'.format(epoch, t_gloss.result(), t_closs.result()))
 				# break
 
+			wandb.log({"Generator Loss": t_gloss.result().numpy(), 
+					"Discriminator Loss": t_closs.result().numpy()})
+
 			with open('experiments/log.txt', 'a') as file:
 				file.write('Epoch: {0}\tT_gloss: {1}\tT_closs: {2}\n'.format(epoch, t_gloss.result(), t_closs.result()))
 			print('Epoch: {0}\tT_gloss: {1}\tT_closs: {2}'.format(epoch, t_gloss.result(), t_closs.result()))
@@ -207,3 +223,5 @@ if __name__ == '__main__':
 				# 	cv2.imwrite(save_path+'/{}_{}.jpg'.format(test_labels[idx], idx), X)
 				# print(X.shape)
 			# break
+
+	wandb.finish()

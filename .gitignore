@@ -7,3 +7,5 @@ experiments/*
 lstm_kmean/data/*
 lstm_kmean/experiments/*
 
+lstm_kmean/wandb/*
+wandb/*
